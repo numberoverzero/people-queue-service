@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{{title}}</title>
+
+    <link
+        href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"
+        integrity="sha256-t2/7smZfgrST4FS1DT0bs/KotCM74XlcqZN5Vu7xlrw="
+        crossorigin="anonymous" rel="stylesheet"
+    />
+</head>
+<body>
+
+
+<main>
+    {% if people %}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Time in Line</th>
+        </tr>
+    {% for person in people %}
+        <tr>
+            <td>{{person.name}}</td>
+            <td>{{person.enqueued_at | humanize}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+    {% endif %}
+</main>
+
+
+</body>
+</html>
