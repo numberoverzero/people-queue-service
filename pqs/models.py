@@ -19,23 +19,31 @@ class Person(BaseModel):
 
     def enqueue(self, engine: Engine):
         # roll back the change on conditional put failure
-        previous = self.enqueued_at
+        has_previous = hasattr(self, "enqueued_at")
+        if has_previous:
+            previous = self.enqueued_at
         self.enqueued_at = pendulum.now()
         try:
             engine.save(self, condition=NOT_EXIST & NOT_ENQUEUED)
             return True
         except ConstraintViolation:
             # User already exists
-            self.enqueued_at = previous
+            if has_previous:
+                self.enqueued_at = previous
             return False
 
     def serve(self, engine):
-        previous = self.served_at
+        has_previous = hasattr(self, "served_at")
+        if has_previous:
+            previous = self.enqueued_at
         self.served_at = pendulum.now()
         try:
             engine.save(self, condition=NOT_SERVED)
+            return True
         except ConstraintViolation:
-            self.served_at = previous
+            if has_previous:
+                self.served_at = previous
+            return False
 
 NOT_EXIST = Person.id.is_(None)
 NOT_ENQUEUED = Person.enqueued_at.is_(None)
