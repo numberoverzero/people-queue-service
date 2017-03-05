@@ -14,53 +14,32 @@ app = Flask(__name__)
 class Queue:
     def __init__(self):
         self._people = {}
-        self._queue = []
-        self._list_view = None
-        self._dirty = True
 
     def __iter__(self):
-        return iter(self._queue)
-
-    @property
-    def list_view(self):
-        self.update()
-        if self._dirty:
-            self._list_view = render_template("queue.html", people=queue)
-            self._dirty = False
-        return self._list_view
+        return iter(sorted(
+            self._people.values(),
+            key=lambda person: person.enqueued_at
+        ))
 
     def update(self):
         record = next(stream)
         while record:
-            self._dirty = True
             event_type = record["meta"]["event"]["type"]
             if event_type == "insert":
                 person = record["new"]
-                self._insert(person)
+                self._people[person.id] = person
+
             elif event_type == "modify":
                 person = record["new"]
-                self._remove(person.id)
-                if person.is_waiting:
-                    self._insert(person)
+                self._people[person.id] = person
+                if not person.is_waiting:
+                    del self._people[person.id]
+
             elif event_type == "remove":
-                person = record["old"]
-                self._remove(person.id)
+                self._people.pop(record["old"].id, None)
+
             record = next(stream)
 
-    def _remove(self, id):
-        try:
-            person = self._people[id]
-            del self._people[id]
-            self._queue.remove(person)
-            self._dirty = True
-        except (KeyError, ValueError):
-            pass
-
-    def _insert(self, person):
-        if person.id in self._people:
-            return
-        self._queue.append(person)
-        self._people[person.id] = person
 
 queue = Queue()
 queue.update()
@@ -78,7 +57,8 @@ def index():
 
 @app.route("/queue")
 def display_queue():
-    return queue.list_view
+    queue.update()
+    return render_template("queue.html", people=queue)
 
 
 def main():
