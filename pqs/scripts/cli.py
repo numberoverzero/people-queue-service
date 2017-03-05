@@ -12,11 +12,24 @@ def is_authenticated(id, **kwargs):
     return True
 
 
-@click.command("register")
+@click.group()
+def main():
+    pass
+
+
+@main.command("push")
 @click.argument("id", required=True)
 @click.argument("name", required=True)
-def main(id, name):
+def push(id, name):
     if not is_authenticated(id): sys.exit("401")
     person = Person(id=id, name=name, enqueued_at=None, served_at=None)
     if not person.enqueue(engine):
         sys.exit("409")
+
+
+@main.command("pop")
+@click.argument("id", required=True)
+def pop(id):
+    person = Person(id=id)
+    if not person.serve(engine):
+        sys.exit("400")

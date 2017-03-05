@@ -33,7 +33,7 @@ if __name__ == "__main__":
         long_description=README + "\n\n" + CHANGES,
         entry_points={
             "console_scripts": [
-                "pqs-enqueue = pqs.scripts.enqueue:main",
+                "pqs-cli = pqs.scripts.cli:main",
                 "pqs-website = pqs.scripts.website:main"
             ]
         },
