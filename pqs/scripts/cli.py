@@ -1,13 +1,13 @@
 import click
 import sys
 from pqs.scripts.config import build_engine, ENQUEUE_PROFILE_NAME
-from pqs.models import Person
+from pqs import models
 
 engine = build_engine(ENQUEUE_PROFILE_NAME)
-engine.bind(Person)
+models.bind_all(engine)
 
 
-def is_authenticated(id):
+def is_authenticated(pid):
     # TODO
     return True
 
@@ -18,18 +18,19 @@ def main():
 
 
 @main.command("push")
-@click.argument("id", required=True)
-@click.argument("name", required=True)
-def push(id, name):
-    if not is_authenticated(id): sys.exit("401")
-    person = Person(id=id, name=name, enqueued_at=None, served_at=None)
-    if not person.enqueue(engine):
-        sys.exit("409")
+@click.argument("pid", required=True)
+def push(pid):
+    if not is_authenticated(id):
+        sys.exit("401")
+    status, next_position = models.push(engine, pid)
+    print(next_position)
+    if status != 200:
+        sys.exit(1)
 
 
-@main.command("pop")
-@click.argument("id", required=True)
-def pop(id):
-    person = Person(id=id)
-    if not person.serve(engine):
-        sys.exit("400")
+@main.command("serve")
+@click.argument("pid", required=True)
+def serve(pid):
+    status = models.serve(engine, pid)
+    if status != 200:
+        sys.exit(1)
