@@ -1,44 +1,53 @@
 from pqs.scripts.config import build_engine, WEBSITE_PROFILE_NAME, WEBSITE_PORT
-from pqs.models import Person
+from pqs.models import bind_all, QueueEntry
 from pendulum import Pendulum
 
 from flask import Flask, url_for, redirect, render_template
 
 engine = build_engine(WEBSITE_PROFILE_NAME)
-engine.bind(Person)
-stream = engine.stream(Person, "trim_horizon")
+bind_all(engine)
+stream = engine.stream(QueueEntry, "trim_horizon")
 
 app = Flask(__name__)
 
 
 class Queue:
     def __init__(self):
-        self._people = {}
+        self._entries = {}
+        self._ordered = []
+        self._dirty = True
 
     def __iter__(self):
-        return iter(sorted(
-            self._people.values(),
-            key=lambda person: person.enqueued_at
-        ))
+        if self._dirty:
+            self._ordered = sorted(
+                self._entries.values(),
+                key=lambda person: person.enqueued_at
+            )
+            self._dirty = False
+        return iter(self._ordered)
 
     def update(self):
         record = next(stream)
         while record:
             event_type = record["meta"]["event"]["type"]
-            if event_type == "insert":
-                person = record["new"]
-                self._people[person.id] = person
-
-            elif event_type == "modify":
-                person = record["new"]
-                self._people[person.id] = person
-                if not person.is_waiting:
-                    del self._people[person.id]
-
+            if event_type in {"insert", "modify"}:
+                entry = record["new"]
+                self._entries[entry.position] = entry
             elif event_type == "remove":
-                self._people.pop(record["old"].id, None)
+                self._entries.pop(record["old"].position, None)
 
+            self._dirty = True
             record = next(stream)
+
+        # Only keep entries with an id that haven't been served
+        self._entries = {
+            position: entry
+            for position, entry in self._entries.items()
+            if (
+                getattr(entry, "id", None) and
+                entry.served_at is None
+            )
+        }
 
 
 queue = Queue()
@@ -58,7 +67,7 @@ def index():
 @app.route("/queue")
 def display_queue():
     queue.update()
-    return render_template("queue.html", people=queue)
+    return render_template("queue.html", queue=queue)
 
 
 def main():

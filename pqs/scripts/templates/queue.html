@@ -21,16 +21,16 @@
 
 
 <main class="container">
-    {% if people %}
+    {% if queue %}
     <table>
         <tr>
-            <th>Name</th>
-            <th>Time in Line</th>
+            <th>ID</th>
+            <th>Time In Line</th>
         </tr>
-    {% for person in people %}
+    {% for entry in queue %}
         <tr>
-            <td>{{person.name}}</td>
-            <td>{{person.enqueued_at | humanize}}</td>
+            <td>{{entry.id}}</td>
+            <td>{{entry.enqueued_at | humanize}}</td>
         </tr>
     {% endfor %}
     </table>
