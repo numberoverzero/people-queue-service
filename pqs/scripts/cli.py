@@ -7,7 +7,7 @@ engine = build_engine(ENQUEUE_PROFILE_NAME)
 engine.bind(Person)
 
 
-def is_authenticated(id, **kwargs):
+def is_authenticated(id):
     # TODO
     return True
 
