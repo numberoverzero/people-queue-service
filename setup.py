@@ -18,7 +18,7 @@ def get_version():
                 return eval(line.split("=")[-1])
 
 REQUIREMENTS = [
-    "bloop==1.0.0",
+    "bloop==1.0.2",
     "click==6.7",
     "flask==0.12",
     "pendulum==1.1.0"
