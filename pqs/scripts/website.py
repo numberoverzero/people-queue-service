@@ -13,6 +13,7 @@ app = Flask(__name__)
 
 class Queue:
     def __init__(self):
+        self.served = 0
         self._entries = {}
         self._ordered = []
         self._dirty = True
@@ -26,6 +27,9 @@ class Queue:
             self._dirty = False
         return iter(self._ordered)
 
+    def __nonzero__(self):
+        return any(iter(self))
+
     def update(self):
         record = next(stream)
         while record:
@@ -38,6 +42,11 @@ class Queue:
 
             self._dirty = True
             record = next(stream)
+
+        # Track served users before we filter them out
+        for entry in self._entries.values():
+            if entry.served_at:
+                self.served += 1
 
         # Only keep entries with an id that haven't been served
         self._entries = {

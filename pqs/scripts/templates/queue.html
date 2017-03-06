@@ -33,8 +33,10 @@
             <td>{{entry.enqueued_at | humanize}}</td>
         </tr>
     {% endfor %}
-    </table>
     {% endif %}
+    </table>
+    {% if queue.served %}<small>{{queue.served}} served.</small>{% endif %}
+
 </main>
 
 
